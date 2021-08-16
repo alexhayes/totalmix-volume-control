@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Hardcodet.Wpf.TaskbarNotification;
 using Microsoft.VisualStudio.Threading;
+using Serilog;
 using TotalMixVC.Communicator;
 using TotalMixVC.GUI.Hotkeys;
 
@@ -44,6 +45,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Configure logging.
+        Log.Logger = new LoggerConfiguration().WriteTo.File("app.log").CreateLogger();
 
         // Create the volume manager which will communicate with the device.
         _volumeManager = new(
@@ -133,6 +137,9 @@ public partial class App : Application
         // Dispose any objects which implement the IDisposable interface.
         _taskCancellationTokenSource.Dispose();
         _trayIcon.Dispose();
+
+        // Close the log.
+        Log.CloseAndFlush();
     }
 
     private async Task ReceiveVolumeAsync()
@@ -154,6 +161,11 @@ public partial class App : Application
                 // the volume indicator.
                 if (received)
                 {
+                    Log.Information(
+                        "Displaying volume indicator because volume received: "
+                        + "{Volume} ({VolumeDecibels})",
+                        _volumeManager.Volume,
+                        _volumeManager.VolumeDecibels);
                     await _volumeIndicator
                         .UpdateVolumeAsync(
                             _volumeManager.Volume, _volumeManager.VolumeDecibels)
@@ -236,6 +248,7 @@ public partial class App : Application
                 {
                     // Increase the volume and show the volume indicator.
                     await _volumeManager.IncreaseVolumeAsync().ConfigureAwait(false);
+                    Log.Information("Displaying volume indicator because up key received");
                     await _volumeIndicator
                         .DisplayCurrentVolumeAsync()
                         .ConfigureAwait(false);
@@ -249,6 +262,7 @@ public partial class App : Application
                 {
                     // Decrease the volume and show the volume indicator.
                     await _volumeManager.DecreaseVolumeAsync().ConfigureAwait(false);
+                    Log.Information("Displaying volume indicator because down key received");
                     await _volumeIndicator
                         .DisplayCurrentVolumeAsync()
                         .ConfigureAwait(false);
@@ -262,6 +276,7 @@ public partial class App : Application
                 {
                     // Finely increase the volume and show the volume indicator.
                     await _volumeManager.IncreaseVolumeAsync(fine: true).ConfigureAwait(false);
+                    Log.Information("Displaying volume indicator because fine up key received");
                     await _volumeIndicator
                         .DisplayCurrentVolumeAsync()
                         .ConfigureAwait(false);
@@ -275,6 +290,8 @@ public partial class App : Application
                 {
                     // Finely decrease the volume and show the volume indicator.
                     await _volumeManager.DecreaseVolumeAsync(fine: true).ConfigureAwait(false);
+                    Log.Information(
+                        "Displaying volume indicator because fine down key received");
                     await _volumeIndicator
                         .DisplayCurrentVolumeAsync()
                         .ConfigureAwait(false);
