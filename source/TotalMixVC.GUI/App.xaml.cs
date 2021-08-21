@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -47,7 +48,12 @@ public partial class App : Application
         base.OnStartup(e);
 
         // Configure logging.
-        Log.Logger = new LoggerConfiguration().WriteTo.File("app.log").CreateLogger();
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo
+            .File(Path.Join(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "app.log"))
+            .CreateLogger();
 
         // Create the volume manager which will communicate with the device.
         _volumeManager = new(
